@@ -1,0 +1,46 @@
+<!-- Execute polymer serve on the file's folder and open http://localhost:8080/components/one-modal/test.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+<script type="module">
+    import {OneTodoList} from "./one-todo-list.js"
+    import {OneClass, html} from "@alexmtur/one-class"
+
+    class MyTest extends OneClass {
+        static get properties() {return {
+            open1: Boolean,
+            };
+        }
+
+      constructor() {
+        super();
+        this.list = [{value: 'First item', done: true}, {value: 'Second item', done: false}];
+      }
+
+    _render() {return html`
+        <style>
+            #list {
+                background: #f1f1f1;
+                border: 1px solid black;
+            }   
+        </style>     
+        <one-todo-list id="list" list=${this.list}></one-todo-list>        
+        `;
+      } 
+    }
+    customElements.define('my-test', MyTest);
+</script>
+
+</head>
+<body>
+    <my-test></my-test>
+</body>
+</html>
+
+
+
+
