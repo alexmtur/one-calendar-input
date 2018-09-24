@@ -1,8 +1,15 @@
 import {OneClass, html} from '@alexmtur/one-class'
-import {OneIcon} from '@alexmtur/one-icon'
-import {oneStyle} from '@alexmtur/one-style'
+import {OneSlideBox} from '@alexmtur/one-slide-box'
+//import {OneIcon} from '@alexmtur/one-icon'
+//import {oneStyle} from '@alexmtur/one-style'
 
-export class OneTodoList extends OneClass {
+//One the index file add the following Polyfill:
+// <script type="text/javascript">
+//     import smoothscroll from 'smoothscroll-polyfill';
+//     smoothscroll.polyfill();
+// </script>
+
+export class OneCalendarInput extends OneClass {
     static get properties() {return {
         list: {type: Array, public: true},
         newItem: String,
@@ -10,97 +17,121 @@ export class OneTodoList extends OneClass {
     }}
     constructor() {
         super();  
-        this.list = [];
         this.newItem = '';
-        //this.suggestions = [];
+        this.monthTable = [];
+        this.setupCalendar();
+    //console.log(me)        //this.suggestions = [];
+    //polyfill();
     }
-    addItem () {
-        if(!this.newItem) return;
-        let item = {'value': this.newItem, 'done': false};
-        this.list.push(item);
-        this.newItem = '';
+    setupCalendar() { //Creates a monthly table from the previous year up to 3 in the future
+        //let month_table = new Object();
+        let prev_year = (new Date().getFullYear()) - 1;
+        let y = prev_year;                      //4 digits. Eg: 2015
+        let m = 0;                              //0 - 11
+        let d = 1;                              //1 - 31     
+        //let w = getWeekday(new Date(y, m, d));  //0(sun) - 6(sat)
+        let w = new Date(y, m, d).getDay();     //0(sun) - 6(sat)
+
+        let today_y = new Date().getFullYear();
+        let today_m = new Date().getMonth();
+        let today_d = new Date().getDate();
+        let today_pos = {i:0, j:0};
+        let dateObj = {};
+
+        //let colors = Common.colors();
+
+        for(let i = 0; i < 60; ++i) {  
+        let cells = new Object();   
+            for(let j = 0; j < 42; ++j) {
+                let cell = new Object();
+                d = j - w + 1;
+                dateObj = new Date(y, m, d);
+
+                cell.i = i;
+                cell.j = j;
+                cell.date = dateObj.getDate();
+                cell.month = dateObj.getMonth();
+                cell.year = dateObj.getFullYear();
+                cell.weekday = dateObj.getDay();
+                //cell.recolor = false;
+                cell.currentMonth = true;
+
+                if(cell.month != m) {           //previous or next month
+                    //cell.background = 'none';
+                    //cell.color = colors.stable;
+                    cell.currentMonth = false;
+                } 
+        //else if(cell.weekday == 0) {  //current month, sundays
+        //   cell.background = 'none';
+        //   cell.color = Common.color_selected();
+        //   cell.recolor = true;
+        // } 
+        // else {                        //current month, working days
+        //   cell.background = 'none';
+        //   cell.color = colors.grey_ish;
+        // }
+        //cell.original_color = cell.color;
+
+                if(y == today_y && m == today_m && d == today_d) {
+                    today_pos.i = i;
+                    today_pos.j = j;
+                }
+                cells[j] = cell;      
+            }
+            this.monthTable[i] = cells;
+            m += 1;
+            if(m > 11) {m = 0; y += 1;}
+            d = 1;
+            w = new Date(y, m, d).getDay();
+        }
+
+        let cell_selected = {i:today_pos.i, j:today_pos.j};
+        this.weekdayString = ["Sunday", "Monday", "Tuesday", "Wednesday", 
+                             "Thursday", "Friday", "Saturday"];
+        this.monthString = ["January", "February", "March", "April", 
+                           "May", "June", "July", "August", 
+                           "September", "October", "November", "December"];
+        console.log(this.monthTable);
     }
-    toggleSelected (index) {
-        this.list[index].done = !this.list[index].done;
-        this.list = this.list.slice(); //to request render, optimize this!
+    test() {
+        console.log('e');
+        this.id('block2').scrollIntoView({behavior: 'smooth'});
+    }
+    signOut(e) {
+        //console.log('bajioba');
+        //console.log(e.target.value);
+        let value = e.target.value;
+        this.id('block' + value).scrollIntoView({behavior: 'smooth'}); //smooth behaviour does not work in Safari...
+
     }
      _render() {
         return html`
-        ${oneStyle}
+        
         <style>
             /* local DOM styles go here */
             :host {
                 display: block;
                 width: 100%;
             }
-            .add-icon {
-                font-size: 20px;
-                margin-left: 10px;
-                background: var(--one-color, #333);
-                fill: white;
-            }
-            .task-row {
-                margin-top: 10px;
-                cursor: pointer;
-            }
-            .task {
-                font-size: 16px;
-                color: #333333;
-                transition: all .5s;
-            }
-            
-            .task[selected=true] {
-                color: #aaaaaa;
-                text-decoration: line-through;
-            }
-            .checkbox {
-                height: 20px;
-                width: 20px;
-                border: solid 1px;
-                border-color: var(--one-color, #333);
-                border-radius: 20px;
-                background: transparent;
-                transition: all .5s;
-                margin-right: 10px;
-            }
-            .checkbox[selected=true] {
-                background: var(--one-color, #333);
-            }
-            input {
-                background: white !important;
-                border: solid 1px var(--one-color, #333) !important;
-                color: #333333;
-                font-family: 'Open Sans';
-                font-size: 16px;
-                display: inline-block;
-                /*border-radius: 20px;*/
-                text-align: center;
-                line-height: 35px;
-                min-width: 100px;
-            }
-            input:focus {
-                outline: none;
-            }
-            input[type=text] {
-                width: 100%;
-                max-width: 350px;
-            }
-
         </style>
+        <one-slide-box bullets arrows>${this.weekdayString.map((i) => html`<div>${i}</div>`)}</one-slide-box>
+        <button @click=${(e)=>{this.test()}}>Logout</button>
+        <input type="range" @input=${(e)=>{this.signOut(e)}} min="1" max="9">
+        <div style="height: 400px; width: 500px; overflow-x: scroll; border: 1px solid black; display: flex;">
+            <div style="height: 400px; min-width: 500px; display:inline-block; background: pink" id="block1"></div>
+            <div style="height: 400px; min-width: 500px; display:inline-block; background: yellow" id="block2"></div>
+            <div style="height: 400px; min-width: 500px; display:inline-block; background: green" id="block3"></div>
+            <div style="height: 400px; min-width: 500px; display:inline-block; background: pink" id="block4"></div>
+            <div style="height: 400px; min-width: 500px; display:inline-block; background: yellow" id="block5"></div>
+            <div style="height: 400px; min-width: 500px; display:inline-block; background: green" id="block6"></div>
+            <div style="height: 400px; min-width: 500px; display:inline-block; background: pink" id="block7"></div>
+            <div style="height: 400px; min-width: 500px; display:inline-block; background: yellow" id="block8"></div>
+            <div style="height: 400px; min-width: 500px; display:inline-block; background: green" id="block9"></div>
+        </div>
+        <button on-click=${(e)=>{this.test()}}>scroll</button>
 
         <div width="100%">
-            <div>
-                <input type="text" placeholder="New Item" on-change=${(e)=>{this.newItem = e.target.value;}} value=${this.newItem}>
-                <one-icon icon="add" class="add-icon" on-click="${(e) => this.addItem()}"></one-icon> 
-            </div>
         </div>
-        ${this.list.map((item, index) => html`
-            <one-block align="center-left" width="100%" class="task-row" on-click=${(e)=>{this.toggleSelected(index);}}>
-                <div class="checkbox" selected$=${item.done}></div>
-                <one-block weight="1">
-                    <div class="task" selected$=${item.done}>${item.value} and ${item.done}</div>
-                </one-block>
-            </one-block>`)}
         `;}
 }
-customElements.define('one-todo-list', OneTodoList);
+customElements.define('one-calendar-input', OneCalendarInput);

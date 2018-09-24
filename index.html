@@ -5,9 +5,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+<script type="text/javascript">
+    import smoothscroll from 'smoothscroll-polyfill';
+    smoothscroll.polyfill();
+</script>
 
 <script type="module">
-    import {OneTodoList} from "./one-todo-list.js"
+    import {OneCalendarInput} from "./one-calendar-input.js"
     import {OneClass, html} from "@alexmtur/one-class"
 
     class MyTest extends OneClass {
@@ -16,21 +20,21 @@
             };
         }
 
-      constructor() {
-        super();
-        this.list = [{value: 'First item', done: true}, {value: 'Second item', done: false}];
-      }
+        constructor() {
+            super();
+            this.list = [{value: 'First item', done: true}, {value: 'Second item', done: false}];
+        }
 
-    _render() {return html`
-        <style>
-            #list {
-                background: #f1f1f1;
-                border: 1px solid black;
-            }   
-        </style>     
-        <one-todo-list id="list" list=${this.list}></one-todo-list>        
-        `;
-      } 
+        _render() {return html`
+            <style>
+                #list {
+                    background: #f1f1f1;
+                    border: 1px solid black;
+                }   
+            </style>     
+            <one-calendar-input></one-calendar-input>        
+            `;
+        } 
     }
     customElements.define('my-test', MyTest);
 </script>
