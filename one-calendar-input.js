@@ -13,6 +13,10 @@ export class OneCalendarInput extends OneClass {
     static get properties() {return {
         list: {type: Array, public: true},
         newItem: String,
+        displayedMonth: String,
+        //Internal
+        selectedI: Number,
+        selectedJ: Number
         //suggestions: Array,
     }}
     constructor() {
@@ -20,6 +24,8 @@ export class OneCalendarInput extends OneClass {
         this.newItem = '';
         this.monthTable = [];
         this.setupCalendar();
+        this.selectedI = 0;
+        this.selectedJ = 0;
     //console.log(me)        //this.suggestions = [];
     //polyfill();
     }
@@ -41,7 +47,7 @@ export class OneCalendarInput extends OneClass {
         //let colors = Common.colors();
 
         for(let i = 0; i < 60; ++i) {  
-        let cells = new Object();   
+        let cells = [];   
             for(let j = 0; j < 42; ++j) {
                 let cell = new Object();
                 d = j - w + 1;
@@ -53,24 +59,11 @@ export class OneCalendarInput extends OneClass {
                 cell.month = dateObj.getMonth();
                 cell.year = dateObj.getFullYear();
                 cell.weekday = dateObj.getDay();
-                //cell.recolor = false;
                 cell.currentMonth = true;
 
                 if(cell.month != m) {           //previous or next month
-                    //cell.background = 'none';
-                    //cell.color = colors.stable;
                     cell.currentMonth = false;
                 } 
-        //else if(cell.weekday == 0) {  //current month, sundays
-        //   cell.background = 'none';
-        //   cell.color = Common.color_selected();
-        //   cell.recolor = true;
-        // } 
-        // else {                        //current month, working days
-        //   cell.background = 'none';
-        //   cell.color = colors.grey_ish;
-        // }
-        //cell.original_color = cell.color;
 
                 if(y == today_y && m == today_m && d == today_d) {
                     today_pos.i = i;
@@ -97,12 +90,18 @@ export class OneCalendarInput extends OneClass {
         console.log('e');
         this.id('block2').scrollIntoView({behavior: 'smooth'});
     }
-    signOut(e) {
+    updateDisplayMonth(e) {
         //console.log('bajioba');
         //console.log(e.target.value);
         let value = e.target.value;
         this.id('block' + value).scrollIntoView({behavior: 'smooth'}); //smooth behaviour does not work in Safari...
-
+        this.displayedMonth = this.monthString[value];
+    }
+    selectDate(cell) {
+        console.log(cell);
+        this.selectedI = cell.i;
+        this.selectedJ = cell.j;
+        //this.requestUpdate();
     }
      _render() {
         return html`
@@ -113,22 +112,29 @@ export class OneCalendarInput extends OneClass {
                 display: block;
                 width: 100%;
             }
+            .cell[selected=true] {
+                background: blue;
+            }
+            .cell {
+                background: red;
+                -webkit-transition: background .5s ease;
+                -moz-transition: background .5s ease;
+
+            }
         </style>
         <one-slide-box bullets arrows>${this.weekdayString.map((i) => html`<div>${i}</div>`)}</one-slide-box>
-        <button @click=${(e)=>{this.test()}}>Logout</button>
-        <input type="range" @input=${(e)=>{this.signOut(e)}} min="1" max="9">
-        <div style="height: 400px; width: 500px; overflow-x: scroll; border: 1px solid black; display: flex;">
-            <div style="height: 400px; min-width: 500px; display:inline-block; background: pink" id="block1"></div>
-            <div style="height: 400px; min-width: 500px; display:inline-block; background: yellow" id="block2"></div>
-            <div style="height: 400px; min-width: 500px; display:inline-block; background: green" id="block3"></div>
-            <div style="height: 400px; min-width: 500px; display:inline-block; background: pink" id="block4"></div>
-            <div style="height: 400px; min-width: 500px; display:inline-block; background: yellow" id="block5"></div>
-            <div style="height: 400px; min-width: 500px; display:inline-block; background: green" id="block6"></div>
-            <div style="height: 400px; min-width: 500px; display:inline-block; background: pink" id="block7"></div>
-            <div style="height: 400px; min-width: 500px; display:inline-block; background: yellow" id="block8"></div>
-            <div style="height: 400px; min-width: 500px; display:inline-block; background: green" id="block9"></div>
+        <button @click=${(e)=>{this.test()}}>Today</button>
+        <div>Month: ${this.displayedMonth}</div>
+        <input type="range" @input=${(e)=>{this.updateDisplayMonth(e)}} min="0" max="11">
+
+        <div style="height: 400px; width: 500px; overflow-x: hidden; border: 1px solid black; display: flex;">
+            ${this.monthTable.map((cells, index) => 
+                html`<div style="height: 400px; min-width: 500px; display:inline-block; background: pink" id=${'block' + index}>
+                    ${cells.map((cell) => html`<div class="cell" selected=${cell.i === this.selectedI && cell.j === this.selectedJ ? true : false} style="border: 1px solid black; width:12%;display:inline-block;height:30px;margin:2px;" @click=${(e)=>{this.selectDate(cell)}}>${cell.date}</div>`)}
+                </div>`)}
         </div>
-        <button on-click=${(e)=>{this.test()}}>scroll</button>
+        <div>Month: ${this.displayedYear}</div>
+        <input type="range" @input=${(e)=>{this.signOut(e)}} min="0" max="4">
 
         <div width="100%">
         </div>

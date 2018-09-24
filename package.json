@@ -1,0 +1,24 @@
+{
+  "name": "one-calendar-input",
+  "version": "1.0.0",
+  "description": "",
+  "main": "one-calendar-input.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexmtur/one-calendar-input.git"
+  },
+  "author": "Alex <alexmartinturrillas@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alexmtur/one-calendar-input/issues"
+  },
+  "homepage": "https://github.com/alexmtur/one-calendar-input#readme",
+  "dependencies": {
+    "@alexmtur/one-class": "^3.2.5",
+    "@alexmtur/one-slide-box": "^3.0.3",
+    "smoothscroll-polyfill": "^0.4.3"
+  }
+}
