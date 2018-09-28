@@ -19,6 +19,7 @@
   "dependencies": {
     "@alexmtur/one-class": "^3.2.5",
     "@alexmtur/one-slide-box": "^3.0.3",
+    "@alexmtur/one-style": "^3.0.2",
     "smoothscroll-polyfill": "^0.4.3"
   }
 }

@@ -1,5 +1,6 @@
 import {OneClass, html} from '@alexmtur/one-class'
 import {OneSlideBox} from '@alexmtur/one-slide-box'
+import {oneStyle} from '@alexmtur/one-style'
 //import {OneIcon} from '@alexmtur/one-icon'
 //import {oneStyle} from '@alexmtur/one-style'
 
@@ -24,8 +25,8 @@ export class OneCalendarInput extends OneClass {
         //Internal
         selectedI: Number,
         selectedJ: Number,
-        displayedMonth: String,
-        displayedYear: String,
+        displayedMonth: Number,
+        displayedYear: Number,
     }}
     constructor() {
         super();  
@@ -69,7 +70,8 @@ export class OneCalendarInput extends OneClass {
                     this.selectedI = i;
                     this.selectedJ = j;
                     this.displayedMonth = todayMonth;
-                    this.displayedYear = 1;                    
+                    this.displayedYear = 1;  
+                    this.displayedCalendarPage = i;                  
                 }
                 cells[j] = cell;      
             }
@@ -91,32 +93,79 @@ export class OneCalendarInput extends OneClass {
     }
     scrollCalendarPage(e) {
         if(e.target.id === 'monthSlider') {
-            this.displayedMonth = e.target.value;
+            this.displayedMonth = Number(e.target.value);
             this.sliderSelection = this.monthString[this.displayedMonth];
         }
         else if(e.target.id === 'yearSlider') {
-            this.displayedYear = e.target.value;
+            this.displayedYear = Number(e.target.value);
             this.sliderSelection = this.yearString[this.displayedYear];
         }
-        let calendarPage = this.getCalendarPage(this.displayedMonth, this.displayedYear);
-        this.id('calendarPage' + calendarPage).scrollIntoView({behavior: 'smooth'}); //smooth behaviour does not work in Safari... Therefore, Polyfill imported
+        this.displayedCalendarPage = this.getCalendarPage(this.displayedMonth, this.displayedYear);
+        this.id('calendarPage' + this.displayedCalendarPage).scrollIntoView({behavior: 'smooth'}); //smooth behaviour does not work in Safari... Therefore, Polyfill imported
         if(!this.id('sliderSelection').visible) this.id('sliderSelection').show(); //slide-in-left as animation
     }
-    //hideSlider
-    updateCalendarPage(e) {
-        console.log(e.target.id)
-        console.log(e)
-    } 
-    dragCalendarPage(e) {
-        console.log(e);
+    setupDrag(e) {
         e.preventDefault();
+        this.mousedown = true;
+        this.initialX = e.pageX;
+        this.initialScrollX = this.id('calendarBody').scrollLeft;
+        this.scrollDelta = 0;
+        return false;
     }
+    dragCalendarPage(e) {
+        if(!this.mousedown) return;
+        e.preventDefault();
+        this.scrollDelta = this.initialX - e.pageX;
+        this.id('calendarBody').scrollTo((this.scrollDelta + this.initialScrollX), 0);
+    }
+    updateCalendarPage(e) {
+        e.preventDefault();
+        if(this.mousedown) {
+            let width = this.id('calendarBody').offsetWidth;
+            if(this.scrollDelta > width / 2.5 && this.displayedCalendarPage < 59) {
+                this.displayedCalendarPage += 1;
+                this.displayedMonth += 1;              
+                if(this.displayedMonth > 11) {
+                    this.displayedMonth = 0; 
+                    this.displayedYear += 1;
+                    this.id('yearSlider').value = this.displayedYear;
+                }
+                this.id('monthSlider').value = this.displayedMonth;
+            }
+            else if((-1) * this.scrollDelta > width / 2.5 && this.displayedCalendarPage > 0) { 
+                this.displayedCalendarPage -= 1;
+                this.displayedMonth -= 1;
+                if(this.displayedMonth < 0) {
+                    this.displayedMonth = 11; 
+                    this.displayedYear -= 1;
+                    this.id('yearSlider').value = this.displayedYear;
+                }
+                this.id('monthSlider').value = this.displayedMonth;
+            }
+            if(Math.abs(this.scrollDelta) > 0) 
+                this.id('calendarPage' + this.displayedCalendarPage).scrollIntoView({behavior: 'smooth'});           
+            this.mousedown = false;
+        }
+    } 
 
     getCalendarPage(month, year) {
         return (Number(year) * 12 + Number(month));
     }
     selectDate(cell) {
-        console.log(cell);
+        if(Math.abs(this.scrollDelta) > 5) return;
+        if(!cell.currentMonth) { //handle prev or next month being selected
+            if(cell.date > 15 && cell.i > 0) { //belongs to a previous month
+                this.monthTable[cell.i-1].map((c) => {if(c.currentMonth && c.date === cell.date) cell = c;});
+            }
+            if(cell.date < 15 && cell.i < 59) { //belongs to the following month
+                this.monthTable[cell.i+1].map((c) => {if(c.currentMonth && c.date === cell.date) cell = c;});
+            }
+            this.id('calendarPage' + cell.i).scrollIntoView({behavior: 'smooth'}); 
+            this.displayedMonth = cell.month; 
+            this.displayedYear = cell.year - Number(this.yearString[0]);
+            this.id('monthSlider').value = this.displayedMonth;
+            this.id('yearSlider').value = this.displayedYear;
+        }
         this.selectedI = cell.i;
         this.selectedJ = cell.j;
         this.date = cell.date;
@@ -124,7 +173,6 @@ export class OneCalendarInput extends OneClass {
         this.year = cell.year;
         this.dateObj = cell.dateObj;
         this.weekday = cell.weekday;
-        //this.requestUpdate();
     }
     _firstRendered() {
         super._firstRendered();
@@ -132,110 +180,143 @@ export class OneCalendarInput extends OneClass {
     }
      _render() {
         return html`
-        
+        ${oneStyle}
         <style>
             /* local DOM styles go here */
             :host {
                 display: block;
-                
+                color: #333;              
             }
-            #calendarBody {
+            #calendar {
                 position: relative;
-                 
+                box-shadow: 0px 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+                box-shadow: 0 2px 7px rgba(0, 0, 0, 0.25);
                 width: 100%; 
                 max-width: 500px;
                 min-width: 200px;
-                overflow-x: hidden; 
-                border: 1px solid black; 
-                display: flex;
-                -webkit-box-shadow: 0 10px 6px -6px #777;
-                -moz-box-shadow: 0 10px 6px -6px #777;
-                box-shadow: 0 10px 6px -6px #777;
             }
-            .calendarPage {
-                
+
+            #calendarBody, #weekdays {
+                position: relative;
+                width: 100%; 
+                overflow-x: hidden;
+                display: flex; 
+            }
+            .weekdayCell, .cell {
+                display:flex;
+                background: white;
+                justify-content: center;
+                align-items: center;
+                height: 8vh;              
+                max-height:50px;
+            }
+            .weekdayCell {
+                background: var(--one-color, #333);
+                color: white;
+                flex: 1;
+            }
+            .calendarPage { 
                 min-width: 100%;  
-                display:flex; 
-                background: pink;
+                display: flex;                 
                 z-index: 0;
                 flex-wrap: wrap;
                 justify-content: center;
                 align-items: center;
             }
             .cell {
-                display:flex;
-                background: red;
-                justify-content: center;
-                align-items: center;
-                
                 width:14.28%;
                 height: 8vh;
-                
-                max-height:50px;
-                
                 -webkit-transition: background .5s ease;
                 -moz-transition: background .5s ease;
-            }
-            .cell[selected=true] {
-                background: blue;
-            }
-            .cell:hover {
-                background: grey;
+                border-radius: 100%;
                 cursor: pointer;
+            }            
+            .cell[selected=true] .date, .date:hover {
+                background: var(--one-color, #333);
+                color: white;
+            }  
+            .cell:hover {
+                opacity: 0.5;                
+            } 
+            .cell:active {
+                opacity: 1
+            }                     
+            .cell[currentMonth=false] .date {
+                color: #bbb;
             }
-            .cell[currentMonth=false] {
-                background: yellow;
-            }
-            #sliderSelection { 
-                position: absolute;
+            .date {
+                width: 8vh;
+                height: 8vh;
+                border-radius: 100%;
                 display: flex;
                 justify-content: center;
                 align-items: center;
+            }
+            #sliderSelection { 
+                position: absolute;       
                 top:30%;
-                height: 40%;
-                width: 500px;
-                background: rgba(100, 100, 100, 0.7);
-                font-size: 60px;
+                height: 30%;
+                width: 100%;
+                background: rgba(100, 100, 100, 0.7);                
                 color: white;
-
-                //move from left to right
+                font-style: italic !important; 
+                font-size: 300%;
+                text-align: center;  
+                line-height: 100%;
+                vertical-align: middle;        
+                padding-top: 10%; 
+            }
+            .sliderBox {
+                display: flex;
+                align-items: center;
+                justify-content: space-around; 
+                padding: 0 10px 0 10px;                             
+            }
+            #monthSlider, #yearSlider {
+                flex: 2;
+                margin: 0 10px 0 10px;
+            }
+            h2 {
+                flex: 1;
+                text-align: center;
+                min-width: 100px;
+                font-size: 120%;
+                color: #888;
             }
         </style>
 
-        <div style="display: flex; ">
-            <h2>${this.monthString[this.displayedMonth]}</h2>
-            <input type="range"  min="0" max="11" id="monthSlider"
-                @input=${(e)=>{this.scrollCalendarPage(e)}}
-                @mouseup=${(e)=>{this.id('sliderSelection').hide()}} 
-                @touchend=${(e)=>{this.id('sliderSelection').hide()}}
-                value=${this.displayedMonth}>
-        </div>
-
-        <div style="position: relative;z-index: 100;">
-            <div>${this.weekdayString.map((i) => html`<div>${i.slice(0, 3)}</div>`)}</div>
+        
+        <div id="calendar">
+            <div class="sliderBox">
+                <h2>${this.monthString[this.displayedMonth]}</h2>
+                <input type="range"  min="0" max="11" id="monthSlider"
+                    @input=${(e)=>{this.scrollCalendarPage(e)}}
+                    @mouseup=${(e)=>{this.id('sliderSelection').hide()}} @touchend=${(e)=>{this.id('sliderSelection').hide()}}                    
+                    value=${this.displayedMonth}>
+            </div>
+            <div id="weekdays">${this.weekdayString.map((i) => html`<div class="weekdayCell">${i.slice(0, 3)}</div>`)}</div>
             
-            <div id="calendarBody" @touchend=${(e)=>{this.updateCalendarPage(e)}} @mouseup=${(e)=>{this.updateCalendarPage(e)}} @touchmove=${(e)=>{this.dragCalendarPage(e)}}>
+            <div id="calendarBody"  
+                @mousedown=${(e)=>{this.setupDrag(e)}}        @touchstart=${(e)=>{this.setupDrag(e)}}
+                @mousemove=${(e)=>{this.dragCalendarPage(e)}} @touchmove=${(e)=>{this.dragCalendarPage(e)}}
+                @mouseup=${(e)=>{this.updateCalendarPage(e)}} @touchend=${(e)=>{this.updateCalendarPage(e)}}>
                 ${this.monthTable.map((cells, index) => 
                     html`<div class="calendarPage" id=${'calendarPage' + index}>
-                        ${cells.map((cell) => html`<div class="cell" currentMonth=${cell.currentMonth}
+                        ${cells.map((cell) => html`<div class="cell" currentMonth=${cell.currentMonth} i=${cell.i}
                             selected=${cell.i === this.selectedI && cell.j === this.selectedJ ? true : false} 
-                            @click=${(e)=>{this.selectDate(cell)}}>${cell.date}</div>`)}
-                    </div>`)}
-                
+                            @click=${(e)=>{this.selectDate(cell)}}><div class="date">${cell.date}</div></div>`)}
+                    </div>`)}                
             </div>
             <one-block id="sliderSelection" .visible=${false}>
-                <div>${this.sliderSelection}</div>
+                ${this.sliderSelection}
             </one-block>
-        
-        </div>
-        <div>Year: ${this.yearString[this.displayedYear]}</div>
-        <input type="range" min="0" max="4" id="yearSlider"
-            @input=${(e)=>{this.scrollCalendarPage(e)}}
-            @mouseup=${(e)=>{this.id('sliderSelection').hide()}} 
-            @touchend=${(e)=>{this.id('sliderSelection').hide()}}
-            value=${this.displayedYear}>
-
-        <div width="100%">
+            <div class="sliderBox" style="border-top: 1px solid #ddd">
+                <h2>${this.yearString[this.displayedYear]}</h2>
+                <input type="range" min="0" max="4" id="yearSlider"
+                    @input=${(e)=>{this.scrollCalendarPage(e)}}
+                    @mouseup=${(e)=>{this.id('sliderSelection').hide()}} @touchend=${(e)=>{this.id('sliderSelection').hide()}}                    
+                    value=${this.displayedYear}>
+            </div>        
         </div>
         `;}
 }
@@ -248,6 +329,6 @@ export class OneBlock extends OneClass {
     constructor() {
         super();  
     }
-     _render() {return html`<style>:host(){}</style><div><slot></slot></div>`;}
+     _render() {return html`<slot></slot>`;}
 }
 customElements.define('one-block', OneBlock);
