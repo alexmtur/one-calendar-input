@@ -1,6 +1,6 @@
 {
-  "name": "one-calendar-input",
-  "version": "1.0.0",
+  "name": "@alexmtur/one-calendar-input",
+  "version": "3.0.1",
   "description": "",
   "main": "one-calendar-input.js",
   "scripts": {

@@ -245,8 +245,8 @@ export class OneCalendarInput extends OneClass {
                 color: #bbb;
             }
             .date {
-                width: 8vh;
-                height: 8vh;
+                width: 7vh;
+                height: 7vh;
                 border-radius: 100%;
                 display: flex;
                 justify-content: center;
